@@ -1,5 +1,5 @@
 --// [WEBHOOK LOGGER]
-local webhookUrl = DA.WebhookURL or ' '
+local webhookUrl = ' '--ใส่คีตรงนี้
 
 local function getExecutorName()
 	if syn then return "Synapse X"
