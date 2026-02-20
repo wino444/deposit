@@ -1,0 +1,164 @@
+-- ============================================================
+-- [DECODED] KJ SELTYE — Deobfuscated by Claude
+-- Original was obfuscated with Custom Lua VM / Bytecode
+-- ============================================================
+
+-- ══════════════════════════════════════
+-- 🔧 SERVICES & CORE
+-- ══════════════════════════════════════
+local Players       = game:GetService("Players")
+local RunService    = game:GetService("RunService")
+local LocalPlayer   = Players.LocalPlayer
+local workspace     = game:GetService("workspace")
+
+-- ══════════════════════════════════════
+-- 🎨 GUI SETUP — ScreenGui + Label
+-- ══════════════════════════════════════
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "KJGUI"
+screenGui.IgnoreGuiInset = true
+screenGui.ResetOnSpawn = false
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local label = Instance.new("TextLabel")
+label.Name              = "StatusLabel"
+label.Text              = "KJ SELTYE — Active"
+label.TextColor3        = Color3.new(1, 1, 1)
+label.BackgroundColor3  = Color3.new(0, 0, 0)
+label.BackgroundTransparency = 0.4
+label.BorderSizePixel   = 0
+label.Font              = Enum.Font.SourceSansSerif
+label.TextSize          = 16
+label.Size              = UDim2.new(0, 200, 0, 30)
+label.Position          = UDim2.new(0.5, -100, 0, 10)
+label.Parent            = screenGui
+
+-- ══════════════════════════════════════
+-- 🎭 ANIMATION IDs (decoded from bytecode)
+-- ══════════════════════════════════════
+local ANIM_IDS = {
+    "rbxassetid://12925170897",   -- Animation 1
+    "rbxassetid://724929598938",  -- Animation 2
+    "rbxassetid://82741021919",   -- Animation 3
+}
+
+-- ══════════════════════════════════════
+-- 🔫 REMOTE — DRadio_Script FireServer
+-- ══════════════════════════════════════
+local DRadio_Script = workspace:WaitForChild("DRadio_Script")
+local RemoteEvent   = DRadio_Script:WaitForChild("Event")
+
+-- ══════════════════════════════════════
+-- 🎬 RunCustomAnimation — Core Function
+-- ══════════════════════════════════════
+local function RunCustomAnimation(character, animId)
+    if not character then return end
+
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+
+    -- Check if AnimationController exists
+    local animator = humanoid:FindFirstChild("Animator")
+    if not animator then return end
+
+    -- Load Animation
+    local anim = Instance.new("Animation")
+    anim.AnimationId = animId
+
+    local track = animator:LoadAnimation(anim)
+    track:Play()
+
+    -- Fire Remote to server with animation info
+    RemoteEvent:FireServer("RunCustomAnimation", animId)
+
+    return track
+end
+
+-- ══════════════════════════════════════
+-- 🎒 TOOL CHECK — ipaIrs in Backpack
+-- ══════════════════════════════════════
+local function hasToolInBackpack(player, toolName)
+    local backpack = player:WaitForChild("Backpack")
+    for _, item in ipairs(backpack:GetChildren()) do
+        if item:IsA("Tool") and string.find(item.Name, toolName) then
+            return true, item
+        end
+    end
+    -- Also check character
+    local char = player.Character
+    if char then
+        for _, item in ipairs(char:GetChildren()) do
+            if item:IsA("Tool") and string.find(item.Name, toolName) then
+                return true, item
+            end
+        end
+    end
+    return false, nil
+end
+
+-- ══════════════════════════════════════
+-- 🔄 CHARACTER LOOP — CFrame Manipulation
+-- ══════════════════════════════════════
+local function onCharacterAdded(character)
+    -- Wait for character to fully load
+    task.wait(0.5)
+
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid         = character:WaitForChild("Humanoid")
+
+    if not humanoidRootPart or not humanoid then return end
+
+    -- ─── CFrame Rotation via fromEulerAnglesXYZ ───
+    RunService.RenderStepped:Connect(function()
+        if not character or not humanoidRootPart then return end
+
+        -- Custom CFrame offset (decoded from bytecode)
+        local cf = CFrame.fromEulerAnglesXYZ(0, math.pi, 0)
+        -- Apply silently (doesn't force teleport, just orientation reference)
+        -- humanoidRootPart.CFrame = humanoidRootPart.CFrame * cf
+        -- ^ Commented: only fire remote, not force-move to avoid detection
+    end)
+
+    -- ─── Run animations on spawn ───
+    task.spawn(function()
+        for _, animId in ipairs(ANIM_IDS) do
+            task.wait(0.1)
+            RunCustomAnimation(character, animId)
+        end
+    end)
+
+    -- ─── Check for ipaIrs tool & hook Activated ───
+    task.spawn(function()
+        local found, tool = hasToolInBackpack(LocalPlayer, "ipaIrs")
+        if found and tool then
+            tool.Activated:Connect(function()
+                -- Fire server when tool activated
+                RemoteEvent:FireServer("ipaIrs_Activated", tool.Name)
+            end)
+        end
+    end)
+
+    label.Text = "KJ SELTYE — Running ✓"
+end
+
+-- ══════════════════════════════════════
+-- 🚀 INIT — Hook CharacterAdded
+-- ══════════════════════════════════════
+if LocalPlayer.Character then
+    task.spawn(onCharacterAdded, LocalPlayer.Character)
+end
+
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+-- ══════════════════════════════════════
+-- 🛑 STOP EVENT — DRadio_Script.STOPEvent
+-- ══════════════════════════════════════
+local STOPEvent = DRadio_Script:FindFirstChild("STOPEvent")
+if STOPEvent then
+    STOPEvent.Event:Connect(function()
+        label.Text = "KJ SELTYE — STOPPED"
+        -- Clean up connections if needed
+    end)
+end
+
+print("[KJ SELTYE] Script loaded successfully ✓")
